@@ -75,25 +75,17 @@ async function authMiddleware(req, res, next) {
         meta:       { reason: jwtError.name },
       });
  
-      // Return a generic message — do NOT forward jwtError.message which
-      // reveals token structure details (e.g. "invalid signature").
       const msg = jwtError.name === 'TokenExpiredError'
         ? 'Your session has expired. Please log in again.'
         : 'Invalid authentication token.';
       return next(new SecurityError(msg, 401));
     }
  
-    // 3. Confirm user still exists and is still approved in the database.
-    //    ─────────────────────────────────────────────────────────────────
-    //    BACKEND TEAM: Replace the stub below with your actual User model.
-    //    ─────────────────────────────────────────────────────────────────
     let dbUser;
     try {
-      // Stub — swap for: const User = require('../models/User');
-      const User = req.app.get('UserModel'); // injected by backend via app.set()
-      dbUser = await User.findById(decoded.sub).select('role status').lean();
+      const User = req.app.get('UserModel'); 
+      dbUser = await User.findById(decoded.sub || decoded.userId).select('role status').lean();
     } catch (dbError) {
-      // DB failure should not leak schema details
       return next(new SecurityError('Authentication service unavailable.', 503));
     }
  
@@ -104,19 +96,15 @@ async function authMiddleware(req, res, next) {
  
     if (dbUser.status !== 'Approved') {
       logAccessDenied({ reason: 'STATUS', req, userId: decoded.sub });
-      return next(
-        new SecurityError(
-          'Your account is pending administrator approval.',
-          403
-        )
-      );
+      return next(new SecurityError('Your account is pending administrator approval.', 403));
     }
  
-    // 4. Attach safe user context — never attach the full DB document
     req.user = {
-      id:     decoded.sub,
+      id:     dbUser._id,
+      userId: dbUser._id, // compatibility with proposed input
       role:   dbUser.role,
       status: dbUser.status,
+      jti:    decoded.jti
     };
  
     logAuditEvent({
@@ -131,4 +119,86 @@ async function authMiddleware(req, res, next) {
   }
 }
  
-module.exports = { authMiddleware, SecurityError };
+/**
+ * Verifies Refresh Tokens (stored in httpOnly cookies or request body)
+ */
+async function verifyRefreshToken(req, res, next) {
+  try {
+    const token = req.cookies?.refreshToken || req.body?.refreshToken;
+    if (!token) throw new SecurityError('Refresh token required.', 401);
+
+    const decoded = jwt.verify(token, securityConfig.jwt.refresh.secret, {
+      algorithms: [securityConfig.jwt.refresh.algorithm],
+      issuer: securityConfig.jwt.issuer
+    });
+
+    req.refreshTokenData = {
+      userId: decoded.sub || decoded.userId,
+      tokenFamily: decoded.tokenFamily
+    };
+    next();
+  } catch (error) {
+    const msg = error.name === 'TokenExpiredError' 
+      ? 'Refresh token expired.' 
+      : 'Invalid refresh token.';
+    next(new SecurityError(msg, 401));
+  }
+}
+
+/**
+ * Optional Authentication
+ * Attaches req.user if token is valid, but continues if not.
+ */
+async function optionalAuth(req, res, next) {
+  const token = extractBearerToken(req.headers.authorization);
+  if (!token) return next();
+
+  try {
+    const decoded = jwt.verify(token, securityConfig.jwt.access.secret);
+    req.user = { id: decoded.sub, role: decoded.role };
+    next();
+  } catch (err) {
+    next(); // Silently fail for optional auth
+  }
+}
+
+/**
+ * Transport Security: Force HTTPS in production
+ */
+function requireHTTPS(req, res, next) {
+  if (!securityConfig.env.isProduction) return next();
+
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    return next();
+  }
+
+  logAuditEvent({
+    event: AUDIT_EVENTS.INSECURE_ACCESS_ATTEMPT,
+    req,
+    level: 'warn'
+  });
+
+  return res.redirect(301, `https://${req.headers.host}${req.url}`);
+}
+
+/**
+ * Validates that the database user still exists (Session sanity check)
+ */
+async function validateSession(req, res, next) {
+  if (!req.user?.id) return next(new SecurityError('No active session.', 401));
+  
+  const User = req.app.get('UserModel');
+  const userExists = await User.exists({ _id: req.user.id });
+  
+  if (!userExists) return next(new SecurityError('Session invalidated.', 401));
+  next();
+}
+
+module.exports = { 
+  authMiddleware, 
+  verifyRefreshToken, 
+  optionalAuth, 
+  requireHTTPS, 
+  validateSession,
+  SecurityError 
+};
