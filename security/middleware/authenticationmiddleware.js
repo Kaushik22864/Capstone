@@ -1,14 +1,14 @@
 
 /**
- * security/middleware/authMiddleware.js
+ * security/middleware/authenticatiomMiddleware.js
  *
  * Express middleware that validates the JWT on every protected route.
  * Attaches the decoded user payload to req.user for downstream handlers.
  *
  * INJECTION POINT (server.js):
- *   const { authMiddleware } = require('./security/middleware/authMiddleware');
- *   app.use('/api/scan',   authMiddleware, scanRouter);
- *   app.use('/api/admin',  authMiddleware, adminRouter);
+ *   const { authenticationMiddleware } = require('./security/middleware/authenticationMiddleware');
+ *   app.use('/api/scan',   authenticationMiddleware, scanRouter);
+ *   app.use('/api/admin',  authenticationMiddleware, adminRouter);
  *
  * THREAT MODEL:
  *   - Token is read from Authorization header only (not cookies or query
@@ -53,7 +53,7 @@ class SecurityError extends Error {
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
-async function authMiddleware(req, res, next) {
+async function authenticationMiddleware(req, res, next) {
   try {
     // 1. Extract token from Authorization header
     const token = extractBearerToken(req.headers.authorization);

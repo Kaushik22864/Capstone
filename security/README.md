@@ -28,7 +28,7 @@ Directory Layout
 │
 ├── middleware/
 │   ├── authMiddleware.js            ← JWT verification + session security
-│   ├── rbacMiddleware.js            ← Role-based access control
+│   ├── authorizationMiddleware.js   ← Role-based access control
 │   ├── rateLimiter.js               ← Per-route rate limiting
 │   ├── httpsEnforce.js              ← HTTPS enforcement
 │   └── errorHandler.js             ← Safe error responses (no info leakage)
