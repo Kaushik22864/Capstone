@@ -6,53 +6,170 @@
 <link rel="stylesheet" href="../CSS/register.css">
 </head>
 <body>
+
 <div class="container">
+
     <div class="card">
+
         <h1>Specialist Registration</h1>
-        <!-- Progress Bar -->
+
         <div class="progress">
             <div class="active"></div>
             <div class="active"></div>
         </div>
-        <form action="verification-pending.html">
-            <h2 class="section-title">Professional Credentials</h2>
+
+        <form id="step2Form">
+
+            <h2 class="section-title">
+                Professional Credentials
+            </h2>
+
             <div class="input-group full">
                 <label>Hospital / Clinic</label>
-                <input type="text" placeholder="Enter hospital/clinic name" required>
+                <input
+                    id="hospital"
+                    type="text"
+                    placeholder="Enter hospital/clinic name"
+                    required>
             </div>
+
             <div class="row">
+
                 <div class="input-group">
                     <label>Specialization</label>
-                    <input type="text" placeholder="Enter your specialization" required>
+                    <input
+                        id="specialization"
+                        type="text"
+                        placeholder="Enter your specialization"
+                        required>
                 </div>
+
                 <div class="input-group">
                     <label>Experience Year</label>
-                    <input type="number" placeholder="Years of experience" required>
+                    <input
+                        id="experience"
+                        type="number"
+                        placeholder="Years of experience"
+                        required>
                 </div>
+
             </div>
-            <!-- Upload -->
+
             <div class="upload-box">
                 <p>⬆</p>
-                <span>Click to upload or drag to drop</span>
-                <input type="file" required>
-            </div>
-            <!-- Buttons -->
-            <div class="button-group">
-                <button type="button" class="btn-back"><a href="register.html">Back</a></button>
+                <span>
+                    Click to upload or drag to drop
+                </span>
 
-                <button type="submit" class="btn-submit">
-                    Submit Application
-                </button>
+                <input type="file">
             </div>
+
+            <div class="button-group">
+
+                <a href="register.html" class="btn-back">
+                    Back
+                </a>
+
+                <button
+                    type="submit"
+                    class="btn-submit">
+
+                    Submit Application
+
+                </button>
+
+            </div>
+
             <div class="divider">
                 <span></span>
                 <span></span>
             </div>
+
             <p class="login-text">
-                Already Verified? <a href="#">Login</a>
+                Already Verified?
+                <a href="login.html">Login</a>
             </p>
+
         </form>
+
     </div>
+
 </div>
+
+<script>
+document
+  .getElementById("step2Form")
+  .addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const step1Data =
+      JSON.parse(
+        sessionStorage.getItem(
+          "specialistData"
+        )
+      );
+
+    const finalData = {
+      ...step1Data,
+
+      hospital:
+        document.getElementById("hospital").value,
+
+      specialization:
+        document.getElementById("specialization").value,
+
+      experience:
+        Number(
+          document.getElementById("experience").value
+        )
+    };
+
+    try {
+
+      const response =
+        await fetch(
+          "http://localhost:5000/api/specialists/register",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify(finalData)
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (data.success) {
+
+        sessionStorage.removeItem(
+          "specialistData"
+        );
+
+        window.location.href =
+          "verification-pending.html";
+
+      } else {
+
+        alert(data.message);
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Could not connect to backend"
+      );
+    }
+  });
+</script>
+
 </body>
 </html>

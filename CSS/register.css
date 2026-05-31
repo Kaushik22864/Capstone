@@ -209,6 +209,10 @@ margin-top:20px;
 /* Back button */
 
 .btn-back{
+display:inline-block;
+text-decoration:none;
+color:black;
+
 padding:14px 40px;
 border-radius:30px;
 border:1px solid black;
@@ -217,13 +221,8 @@ font-weight:600;
 cursor:pointer;
 }
 
-.btn-back a {
-    text-decoration: none;
-    color: inherit;
-}
-
 .btn-back:hover{
-    background: rgb(116, 133, 135);
+background:rgb(116,133,135);
 }
 
 /* Submit button */
