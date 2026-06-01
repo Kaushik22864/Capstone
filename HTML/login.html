@@ -9,34 +9,71 @@
 
 <div class="container">
     <div class="login-card">
+
         <div class="left">
-            <img src="../Assets/Pharmacist--Streamline-Milano.png" alt="Illustration">
+            <img
+                src="../Assets/Pharmacist--Streamline-Milano.png"
+                alt="Illustration">
         </div>
+
         <div class="right">
+
             <h1>Welcome Back</h1>
-            <form>
+
+            <form id="loginForm">
+
                 <label>Email Address</label>
-                <input type="email" placeholder="Enter your email" required>
+
+                <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    required>
+
                 <label>Password</label>
-                <input type="password" placeholder="Enter password" required>
+
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password"
+                    required>
+
                 <div class="options">
+
                     <label class="remember">
                         <input type="checkbox">
                         Remember this device
                     </label>
-                    <a href="#">Forget Password?</a>
+
+                    <a href="#">
+                        Forget Password?
+                    </a>
+
                 </div>
-                <button type="submit">Login</button>
+
+                <button type="submit">
+                    Login
+                </button>
+
                 <div class="divider">
                     <span></span>
                     <span></span>
                 </div>
+
                 <p class="apply">
-                    New specialist ? <a href="register.html">Apply for Access</a>
+                    New specialist ?
+                    <a href="register.html">
+                        Apply for Access
+                    </a>
                 </p>
+
             </form>
+
         </div>
     </div>
 </div>
+
+<script src="../Scripts/login.js"></script>
+
 </body>
 </html>
