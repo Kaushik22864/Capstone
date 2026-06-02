@@ -17,4 +17,3 @@ mongoose.connect(process.env.MONGO_URI)
     console.error(err);
   });
 
-  //a
