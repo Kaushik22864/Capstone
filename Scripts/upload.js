@@ -2,7 +2,7 @@ async function uploadOCT(file) {
   try {
     // Get pre-signed URL from Lambda
     const response = await axios.post(
-      "https://abc123.lambda-url.ap-southeast-1.on.aws/",
+      "https://au6zjukrzlky36hgjsy73aiwae0jzvfu.lambda-url.ap-south-1.on.aws/",
       {
         fileName: file.name,
         fileType: file.type
