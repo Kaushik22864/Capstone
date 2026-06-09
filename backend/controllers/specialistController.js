@@ -1,7 +1,7 @@
 const Specialist = require("../models/Specialist");
 const bcrypt = require("bcryptjs");
 
-// Controller Registration
+// Specialist Registration
 
 const registerSpecialist = async (req, res) => {
   try {
@@ -61,7 +61,7 @@ module.exports = {
   registerSpecialist
 };
 
-// Controller Login
+// Specialist Login
 
 const jwt = require("jsonwebtoken");
 
