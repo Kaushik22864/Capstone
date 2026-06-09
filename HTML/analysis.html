@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OPTISCAN - Analysis</title>
 <link rel="stylesheet" href="../CSS/analysis.css">
+<!-- Axios (needed for Lambda + S3 calls) -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
@@ -92,7 +94,7 @@
 
                         <label class="browse-btn">
                             Browse Files
-                            <input type="file">
+                            <input type="file" id="octFile" accept="image/*">
                         </label>
 
                     </div>
@@ -108,7 +110,7 @@
                         <p>Ready for diagnostic sweep</p>
                     </div>
 
-                    <button class="analyze-btn">
+                    <button class="analyze-btn" onclick="handleUpload()">
                         Run AI Analysis
                     </button>
 
@@ -195,6 +197,6 @@
     </main>
 
 </div>
-
+<script src="../Scripts/upload.js"></script>
 </body>
 </html>
