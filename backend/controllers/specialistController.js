@@ -1,8 +1,10 @@
 const Specialist = require("../models/Specialist");
-const bcrypt = require("bcryptjs");
+const { passwordService, jwtService, auditService } = require("../../security/service");
+const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/service/audit.service");
 
 // Controller Registration
 
+// Combined exports at the end of the file
 const registerSpecialist = async (req, res) => {
   try {
     const {
@@ -26,10 +28,19 @@ const registerSpecialist = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      10
-    );
+    let hashedPassword;
+    try {
+      hashedPassword = await passwordService.hashPassword(password, {
+        userInfo: { email, firstName, lastName }
+      });
+    } catch (error) {
+      if (error.code === 'PASSWORD_VALIDATION_FAILED') {
+        return res.status(400).json({ success: false, message: error.details.join(', ') });
+      }
+      console.error('Password hashing error:', error);
+      return res.status(500).json({ success: false, message: "Failed to process password." });
+    }
+
 
     const specialist =
       await Specialist.create({
@@ -42,6 +53,13 @@ const registerSpecialist = async (req, res) => {
         experience
       });
 
+    // Log user creation event
+    auditService.log({
+      action: AUDIT_EVENTS.USER_CREATED,
+      userId: specialist._id,
+      ipAddress: req.ip,
+      details: { email: specialist.email, role: 'Specialist' }
+    });
     res.status(201).json({
       success: true,
       message: "Registration successful",
@@ -81,33 +99,45 @@ const loginSpecialist = async (req, res) => {
       });
     }
 
-    const passwordMatch =
-      await bcrypt.compare(
-        password,
-        specialist.password
-      );
+    const passwordMatch = await passwordService.verify(password, specialist.password);
 
     if (!passwordMatch) {
+      // Log failed login attempt
+      auditService.logAuth({
+        type: 'failure',
+        userId: specialist._id,
+        email: specialist.email,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        reason: 'INVALID_CREDENTIALS'
+      });
       return res.status(400).json({
         success: false,
         message: "Invalid email or password"
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: specialist._id,
-        email: specialist.email
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d"
-      }
-    );
+    // Generate token pair using the security service
+    const { accessToken, refreshToken } = jwtService.generateTokenPair({
+      userId: specialist._id,
+      email: specialist.email,
+      role: specialist.role || 'Specialist', // Assuming 'Specialist' role, adjust if model has a role field
+      isVerified: specialist.status === 'Approved' // Assuming 'Approved' status means verified
+    });
+
+    // Log successful login
+    auditService.logAuth({
+      type: 'success',
+      userId: specialist._id,
+      email: specialist.email,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
 
     res.status(200).json({
       success: true,
-      token,
+      accessToken,
+      refreshToken, // Refresh token should ideally be set in an HttpOnly cookie
       specialist: {
         id: specialist._id,
         firstName: specialist.firstName,
@@ -120,15 +150,13 @@ const loginSpecialist = async (req, res) => {
 
   } catch (error) {
 
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
+// Combined exports
 module.exports = {
   registerSpecialist,
   loginSpecialist
 };
-
