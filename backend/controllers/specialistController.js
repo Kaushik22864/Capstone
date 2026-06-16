@@ -2,7 +2,7 @@ const Specialist = require("../models/Specialist");
 const { passwordService, jwtService, auditService, encryptionService } = require("../../security/service");
 const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/service/audit.service");
 
-// Controller Registration
+// Specialist Registration
 
 // Combined exports at the end of the file
 const registerSpecialist = async (req, res) => {
@@ -69,6 +69,8 @@ const registerSpecialist = async (req, res) => {
 };
 
 // Controller Login
+
+const jwt = require("jsonwebtoken");
 
 const loginSpecialist = async (req, res) => {
   try {
