@@ -1,5 +1,5 @@
 const Specialist = require("../models/Specialist");
-const { passwordService, jwtService, auditService } = require("../../security/service");
+const { passwordService, jwtService, auditService, encryptionService } = require("../../security/service");
 const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/service/audit.service");
 
 // Controller Registration
@@ -17,38 +17,31 @@ const registerSpecialist = async (req, res) => {
       experience
     } = req.body;
 
-    const existingUser = await Specialist.findOne({
-      email: email.toLowerCase()
-    });
+    const emailLower = email.toLowerCase();
+    const existingUser = await Specialist.findOne({ email: emailLower });
 
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered"
-      });
+      return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
-    let hashedPassword;
-    try {
-      hashedPassword = await passwordService.hashPassword(password, {
-        userInfo: { email, firstName, lastName }
-      });
-    } catch (error) {
-      if (error.code === 'PASSWORD_VALIDATION_FAILED') {
-        return res.status(400).json({ success: false, message: error.details.join(', ') });
-      }
-      console.error('Password hashing error:', error);
-      return res.status(500).json({ success: false, message: "Failed to process password." });
-    }
+    // 1. Password Security: Hashing & Policy Validation
+    // The service handles policy checks internally. Redundant try/catch is removed 
+    // as the global securityErrorHandler will catch validation failures.
+    const hashedPassword = await passwordService.hashPassword(password, {
+      userInfo: { email: emailLower, firstName, lastName }
+    });
 
+    // 2. Data Security: Encrypt PII fields (AES-256) for HIPAA compliance
+    const encryptedData = encryptionService.encryptFields(
+      { firstName, lastName, hospital },
+      ['firstName', 'lastName', 'hospital']
+    );
 
     const specialist =
       await Specialist.create({
-        firstName,
-        lastName,
-        email: email.toLowerCase(),
+        ...encryptedData,
+        email: emailLower,
         password: hashedPassword,
-        hospital,
         specialization,
         experience
       });
@@ -75,13 +68,7 @@ const registerSpecialist = async (req, res) => {
   }
 };
 
-module.exports = {
-  registerSpecialist
-};
-
 // Controller Login
-
-const jwt = require("jsonwebtoken");
 
 const loginSpecialist = async (req, res) => {
   try {
