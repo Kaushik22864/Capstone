@@ -32,6 +32,7 @@ const auditService = require('./audit.service');
  * Validates password against security policy
  * 
  * @param {string} password - Password to validate
+ * @param {Object} [options={}] - Validation options/policy override
  * @returns {PasswordValidationResult} Validation result
  * 
  * USAGE:
@@ -40,18 +41,30 @@ const auditService = require('./audit.service');
  *   console.log(result.errors);
  * }
  */
-function validatePolicy(password) {
+function validatePolicy(password, options = {}) {
   const errors = [];
-  const policy = securityConfig.password;
+  
+  // Use provided policy or fall back to config, with hardcoded defaults as last resort
+  const policy = options.policy || securityConfig.password || {
+    minLength: 8,
+    maxLength: 128,
+    requireUppercase: true,
+    requireLowercase: true,
+    requireNumbers: true,
+    requireSpecialChars: true,
+    specialChars: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+  };
   
   // Check minimum length
-  if (password.length < policy.minLength) {
-    errors.push(`Password must be at least ${policy.minLength} characters long`);
+  const minLength = policy.minLength || 8;
+  if (password.length < minLength) {
+    errors.push(`Password must be at least ${minLength} characters long`);
   }
   
   // Check maximum length
-  if (password.length > policy.maxLength) {
-    errors.push(`Password must be no more than ${policy.maxLength} characters long`);
+  const maxLength = policy.maxLength || 128;
+  if (password.length > maxLength) {
+    errors.push(`Password must be no more than ${maxLength} characters long`);
   }
   
   // Check for uppercase letters
@@ -70,8 +83,10 @@ function validatePolicy(password) {
   }
   
   // Check for special characters
-  if (policy.requireSpecialChars) {
-    const specialRegex = new RegExp(`[${escapeRegExp(policy.specialChars)}]`);
+  const reqSpecial = policy.requireSpecialChars || policy.requireSpecial;
+  if (reqSpecial) {
+    const chars = policy.specialChars || '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const specialRegex = new RegExp(`[${escapeRegExp(chars)}]`);
     if (!specialRegex.test(password)) {
       errors.push('Password must contain at least one special character');
     }
@@ -148,6 +163,7 @@ function calculateStrength(password) {
  * Hashes a password using bcrypt
  * 
  * @param {string} password - Plain text password
+ * @param {Object} [options={}] - Options including policy override
  * @returns {Promise<string>} Hashed password
  * 
  * USAGE:
@@ -157,15 +173,16 @@ function calculateStrength(password) {
  * SECURITY: Uses bcrypt with configurable cost factor
  * Default is 12 rounds (~250ms on modern hardware)
  */
-async function hash(password) {
+async function hash(password, options = {}) {
   // Validate password first
-  const validation = validatePolicy(password);
+  const validation = validatePolicy(password, options);
   if (!validation.valid) {
     throw new Error(`Password policy violation: ${validation.errors.join(', ')}`);
   }
   
   // Generate salt and hash
-  const salt = await bcrypt.genSalt(securityConfig.password.bcryptRounds);
+  const rounds = options.bcryptRounds || (securityConfig.password ? securityConfig.password.bcryptRounds : 12);
+  const salt = await bcrypt.genSalt(rounds);
   const hashedPassword = await bcrypt.hash(password, salt);
   
   return hashedPassword;
@@ -394,7 +411,7 @@ function validatePassword(password, context = {}) {
   const errors = [];
   
   // Basic policy validation
-  const policyResult = validatePolicy(password);
+  const policyResult = validatePolicy(password, context);
   errors.push(...policyResult.errors);
   
   // Check against common passwords

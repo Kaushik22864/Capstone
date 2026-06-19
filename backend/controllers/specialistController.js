@@ -1,6 +1,6 @@
 const Specialist = require("../models/Specialist");
-const { passwordService, jwtService, auditService, encryptionService } = require("../../security/service");
-const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/service/audit.service");
+const { passwordService, jwtService, auditService, encryptionService } = require("../../security/services");
+const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/services/audit.service");
 
 // Specialist Registration
 
