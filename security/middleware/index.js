@@ -7,7 +7,7 @@
 'use strict';
 
 // Mapping internal filenames to the export object
-const authMiddleware = require('./authenticationmiddleware');
+const authMiddleware = require('./authentication.middleware');
 const rbacMiddleware = require('./authorization.middleware');
 const rateLimitMiddleware = require('./rateLimit.middleware');
 const fileUploadMiddleware = require('./fileUpload.middleware');

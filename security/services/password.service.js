@@ -108,7 +108,7 @@ function validatePolicy(password, options = {}) {
  * @returns {string} Escaped string
  */
 function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return string.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
 }
 
 /**

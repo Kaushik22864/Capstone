@@ -6,7 +6,7 @@
 
 'use strict';
 
-const { SecurityError } = require('./authenticationmiddleware');
+const { SecurityError } = require('./authentication.middleware');
 const { logAccessDenied, logAuditEvent } = require('../audit/auditLogger');
 const { AUDIT_EVENTS } = require('../audit/auditEvents');
 const { 

@@ -110,8 +110,8 @@ const loginSpecialist = async (req, res) => {
     const { accessToken, refreshToken } = jwtService.generateTokenPair({
       userId: specialist._id,
       email: specialist.email,
-      role: specialist.role || 'Specialist', // Assuming 'Specialist' role, adjust if model has a role field
-      isVerified: specialist.status === 'Approved' // Assuming 'Approved' status means verified
+      role: specialist.role,
+      isVerified: specialist.status === 'Approved'
     });
 
     // Log successful login
@@ -125,6 +125,7 @@ const loginSpecialist = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      token: accessToken,
       accessToken,
       refreshToken, // Refresh token should ideally be set in an HttpOnly cookie
       specialist: {
