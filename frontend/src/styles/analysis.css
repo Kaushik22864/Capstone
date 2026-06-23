@@ -109,24 +109,27 @@ display:flex;
 align-items:center;
 gap:20px;
 }
-
 .analysis-notification{
-width:22px;
-height:22px;
-border-radius:50%;
-border:2px solid black;
-position:relative;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analysis-notification svg{
+  width: 24px;
+  height: 24px;
 }
 
 .analysis-notification::after{
-content:"";
-width:8px;
-height:8px;
-background:red;
-border-radius:50%;
-position:absolute;
-top:-3px;
-right:-3px;
+  content: "";
+  width: 8px;
+  height: 8px;
+  /* background: red; */
+  border-radius: 50%;
+  position: absolute;
+  top: -2px;
+  right: -2px;
 }
 
 .analysis-profile img{
