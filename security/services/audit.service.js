@@ -196,16 +196,18 @@ function sanitizeData(data) {
     'creditCard', 'cardNumber', 'cvv',
     'dateOfBirth', 'dob'
   ];
-  
-  const sanitized = { ...data };
-  
-  for (const field of sensitiveFields) {
-    if (sanitized[field]) {
-      sanitized[field] = '[REDACTED]';
+
+  return Object.keys(data).reduce((acc, key) => {
+    const value = data[key];
+    if (sensitiveFields.includes(key)) {
+      acc[key] = '[REDACTED]';
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      acc[key] = sanitizeData(value);
+    } else {
+      acc[key] = value;
     }
-  }
-  
-  return sanitized;
+    return acc;
+  }, Array.isArray(data) ? [] : {});
 }
 
 /**

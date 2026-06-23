@@ -122,16 +122,16 @@ function decrypt(encryptedData, parseJson = false) {
     // Extract components
     let offset = 0;
     
-    const salt = combined.slice(offset, offset + SALT_LENGTH);
+    const salt = combined.subarray(offset, offset + SALT_LENGTH);
     offset += SALT_LENGTH;
     
-    const iv = combined.slice(offset, offset + IV_LENGTH);
+    const iv = combined.subarray(offset, offset + IV_LENGTH);
     offset += IV_LENGTH;
     
-    const authTag = combined.slice(offset, offset + AUTH_TAG_LENGTH);
+    const authTag = combined.subarray(offset, offset + AUTH_TAG_LENGTH);
     offset += AUTH_TAG_LENGTH;
     
-    const ciphertext = combined.slice(offset);
+    const ciphertext = combined.subarray(offset);
     
     // Derive key from master key
     const masterKey = securityConfig.encryption.key;

@@ -1,6 +1,6 @@
 
 /**
- * security/middleware/authenticatiomMiddleware.js
+ * security/middleware/authentication.middleware.js
  *
  * Express middleware that validates the JWT on every protected route.
  * Attaches the decoded user payload to req.user for downstream handlers.
@@ -20,15 +20,17 @@
  *     approval status — a role change by the admin takes effect immediately
  *     on the next request without waiting for the token to expire.
  *
- * NOTE FOR BACKEND TEAM:
- *   Replace the placeholder `User.findById` call with your actual Mongoose
- *   User model import. The interface expected is:
- *     User.findById(id).select('role status').lean()
- *   which should return { role, status } or null.
+ * CONNECTION LOGIC:
+ *   This middleware uses Dependency Injection. Ensure the User model is 
+ *   injected in server.js: app.set('UserModel', User);
+ *   
+ *   Expected model interface: .findById().select('role status').lean()
  */
  
 'use strict';
  
+const jwt = require('jsonwebtoken');
+const securityConfig = require('../config/security.config');
 const { verifyAccessToken, extractBearerToken } = require('../utils/tokenUtils');
 const { logAuditEvent, logAccessDenied }         = require('../audit/auditLogger');
 const { AUDIT_EVENTS }                           = require('../audit/auditEvents');
@@ -94,11 +96,11 @@ async function authenticationMiddleware(req, res, next) {
       return next(new SecurityError('Account not found.', 401));
     }
  
-    if (dbUser.status !== 'Approved') {
-      logAccessDenied({ reason: 'STATUS', req, userId: decoded.sub });
-      return next(new SecurityError('Your account is pending administrator approval.', 403));
-    }
- 
+    // Note: Global 'Approved' status check is removed here to allow 
+    // Unverified users to access verification routes.
+    // Specific verification requirements are now handled by the RBAC 
+    // middleware using the 'requireVerified' flag from rbac.config.js.
+
     req.user = {
       id:     dbUser._id,
       userId: dbUser._id, // compatibility with proposed input
@@ -154,8 +156,8 @@ async function optionalAuth(req, res, next) {
   if (!token) return next();
 
   try {
-    const decoded = jwt.verify(token, securityConfig.jwt.access.secret);
-    req.user = { id: decoded.sub, role: decoded.role };
+    const decoded = verifyAccessToken(token);
+    req.user = { id: decoded.sub || decoded.userId, role: decoded.role };
     next();
   } catch (err) {
     next(); // Silently fail for optional auth
@@ -195,7 +197,7 @@ async function validateSession(req, res, next) {
 }
 
 module.exports = { 
-  authMiddleware, 
+  authMiddleware: authenticationMiddleware, 
   verifyRefreshToken, 
   optionalAuth, 
   requireHTTPS, 
