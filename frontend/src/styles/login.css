@@ -2,16 +2,16 @@
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family: Arial, Helvetica, sans-serif;
+font-family:Arial, Helvetica, sans-serif;
 }
 
-body{
-/* background:#f1f2f4; */
+.login-page{
 background:#999;
-height:100vh;
+min-height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
+padding:20px;
 }
 
 .container{
@@ -55,13 +55,13 @@ margin-bottom:30px;
 color:#1f2a44;
 }
 
-label{
+.right label{
 display:block;
 margin-bottom:8px;
 font-weight:600;
 }
 
-input{
+.right input{
 width:100%;
 padding:14px;
 margin-bottom:20px;
@@ -86,12 +86,7 @@ color:#1e5bd7;
 text-decoration:none;
 }
 
-/* FIX CHECKBOX */
-.remember input{
-width:auto;
-margin:0;
-padding:0;
-}
+/* REMEMBER */
 
 .remember{
 display:flex;
@@ -100,9 +95,15 @@ gap:8px;
 white-space:nowrap;
 }
 
+.remember input{
+width:auto;
+margin:0;
+padding:0;
+}
+
 /* BUTTON */
 
-button{
+.right button{
 width:100%;
 padding:14px;
 border:none;
@@ -114,7 +115,7 @@ font-weight:600;
 cursor:pointer;
 }
 
-button:hover{
+.right button:hover{
 background:#2455b5;
 }
 
@@ -144,3 +145,27 @@ text-decoration:none;
 font-weight:600;
 }
 
+/* MOBILE */
+
+@media (max-width:768px){
+
+.login-card{
+flex-direction:column;
+padding:40px 25px;
+}
+
+.left img{
+max-width:250px;
+}
+
+.right{
+max-width:100%;
+width:100%;
+}
+
+.options{
+flex-direction:column;
+gap:15px;
+align-items:flex-start;
+}
+}

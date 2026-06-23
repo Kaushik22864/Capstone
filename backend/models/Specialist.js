@@ -58,5 +58,3 @@ module.exports = mongoose.model(
   "Specialist",
   specialistSchema
 );
-
-//a

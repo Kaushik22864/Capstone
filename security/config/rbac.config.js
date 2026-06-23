@@ -118,6 +118,8 @@ const ROUTE_RULES = {
   // Public routes (no authentication required)
   'POST /api/auth/register': { public: true },
   'POST /api/auth/login': { public: true },
+  'POST /api/specialists/register': { public: true },
+  'POST /api/specialists/login': { public: true },
   'POST /api/auth/forgot-password': { public: true },
   'POST /api/auth/reset-password': { public: true },
   'GET /api/health': { public: true },
