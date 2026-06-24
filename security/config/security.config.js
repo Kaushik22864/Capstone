@@ -39,7 +39,8 @@ const securityConfig = {
       expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d',
       algorithm: 'HS256'
     },
-    issuer: 'oct-diagnostic-system',
+    issuer: process.env.JWT_ISSUER || 'oct-diagnostic-system',
+    audience: process.env.JWT_AUDIENCE || 'oct-users',
   },
 
 
@@ -155,7 +156,7 @@ function validateConfig() {
   if (securityConfig.encryption.key && securityConfig.encryption.key.length !== 64) {
     throw new Error('ENCRYPTION_KEY must be a 64-character hex string (32 bytes).');
   }
- 
+
   if (securityConfig.encryption.iv && securityConfig.encryption.iv.length !== 32) {
     throw new Error('ENCRYPTION_IV must be a 32-character hex string (16 bytes).');
   }
@@ -163,7 +164,7 @@ function validateConfig() {
 
   if (missing.length > 0) {
     const errorMsg = `[SECURITY FATAL] Missing critical environment variables: ${missing.join(', ')}`;
-   
+
     if (isProd) {
       console.error(errorMsg);
       process.exit(1); // Kill process in production
