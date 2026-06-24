@@ -36,7 +36,7 @@ const securityConfig = require("../security/config/security.config");
 const jwtService = require("../security/services/jwt.service");
 const authMiddleware = require("../security/middleware/authentication.middleware");
 const authorizationMiddleware = require("../security/middleware/authorization.middleware");
-const rateLimitMiddleware = require("../security/middleware/rateLimit.middleware");
+//const rateLimitMiddleware = require("../security/middleware/rateLimit.middleware");
 
 const app = express();
 
