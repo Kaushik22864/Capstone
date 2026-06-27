@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "../components/AdminLayout";
 import "../styles/doctorVerification.css";
 
 function DoctorVerification() {
+  /*
   const applications = [
     {
       id: 1,
@@ -36,44 +39,102 @@ function DoctorVerification() {
       status: "Verification Ready",
     },
   ];
+  */
+
+  const navigate = useNavigate();
+
+  const [applications, setApplications] = useState([]);
+
+  useEffect(() => {
+    loadApplications();
+  }, []);
+
+  const loadApplications = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/applications/recent"
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setApplications(data.applications);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const approveDoctor = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/application/${id}/approve`,
+        {
+          method: "PUT",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Doctor Approved");
+        loadApplications();
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const rejectDoctor = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/application/${id}/reject`,
+        {
+          method: "PUT",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Application Rejected");
+        loadApplications();
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
-    <AdminLayout>
-
+    <AdminLayout active="verification">
       <main className="verification-main">
-
         {/* Header */}
-
         <div className="verification-header">
-
           <h1>Doctor Verification</h1>
 
           <p>
-            Manage the clinical onboarding queue. Review submitted
-            medical licenses, specialization credentials and verify
-            identities before granting access to the platform.
+            Manage the clinical onboarding queue. Review submitted medical
+            licenses, specialization credentials and verify identities before
+            granting access to the platform.
           </p>
-
         </div>
 
         {/* Verification Table */}
-
         <div className="verification-card">
-
           <div className="card-header">
-
             <h3>Pending Medical Verifications</h3>
 
             <span className="action-required">
-              Action Required: 24
+              Action Required: {applications.length}
             </span>
-
           </div>
 
           <table>
-
             <thead>
-
               <tr>
                 <th>Doctor Name</th>
                 <th>Specialization</th>
@@ -81,113 +142,95 @@ function DoctorVerification() {
                 <th>Document Status</th>
                 <th>Actions</th>
               </tr>
-
             </thead>
 
             <tbody>
-
-              {applications.map((doctor) => (
-
-                <tr key={doctor.id}>
-
-                  <td>
-
-                    <div className="doctor-info">
-
-                      <div className="doctor-avatar">
-                        {doctor.name
-                          .split(" ")
-                          .map((word) => word[0])
-                          .join("")
-                          .substring(0, 2)}
-                      </div>
-
-                      <div>
-
-                        <strong>{doctor.name}</strong>
-
-                        <p>{doctor.email}</p>
-
-                      </div>
-
-                    </div>
-
+              {applications.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{
+                      textAlign: "center",
+                      padding: "30px",
+                    }}
+                  >
+                    No pending applications.
                   </td>
-
-                  <td>
-
-                    <span className="specialization-tag">
-                      {doctor.specialization}
-                    </span>
-
-                  </td>
-
-                  <td>{doctor.submissionDate}</td>
-
-                  <td>
-
-                    <span
-                      className={`doc-status ${doctor.status
-                        .toLowerCase()
-                        .replace(/\s|\//g, "-")}`}
-                    >
-                      {doctor.status}
-                    </span>
-
-                  </td>
-
-                  <td className="verification-actions">
-
-                    <button className="credential-btn">
-                      View Credentials
-                    </button>
-
-                    <button className="approve-btn">
-                      Approve
-                    </button>
-
-                    <button className="reject-btn">
-                      Reject
-                    </button>
-
-                  </td>
-
                 </tr>
+              ) : (
+                applications.map((doctor) => (
+                  <tr key={doctor._id}>
+                    <td>
+                      <div className="doctor-info">
+                        <div className="doctor-avatar">
+                          {(doctor.firstName[0] + doctor.lastName[0]).toUpperCase()}
+                        </div>
 
-              ))}
+                        <div>
+                          <strong>
+                            {doctor.firstName} {doctor.lastName}
+                          </strong>
 
+                          <p>{doctor.email}</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className="specialization-tag">
+                        {doctor.specialization}
+                      </span>
+                    </td>
+
+                    <td>
+                      {new Date(doctor.createdAt).toLocaleDateString()}
+                    </td>
+
+                    <td>
+                      <span className="doc-status awaiting-ocr">
+                        Pending Review
+                      </span>
+                    </td>
+
+                    <td className="verification-actions">
+                      <button
+                        className="credential-btn"
+                        onClick={() =>
+                          navigate(
+                            `/doctor-credential-review/${doctor._id}`
+                          )
+                        }
+                      >
+                        View Credentials
+                      </button>
+
+                      <button
+                        className="approve-btn"
+                        onClick={() => approveDoctor(doctor._id)}
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        className="reject-btn"
+                        onClick={() => rejectDoctor(doctor._id)}
+                      >
+                        Reject
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
-
           </table>
 
           <div className="table-footer">
-
             <span>
-              Showing 1 to 4 of 24 applications
+              Showing {applications.length} application(s)
             </span>
-
-            <div className="pagination">
-
-              <button>{"<"}</button>
-
-              <button className="active-page">
-                1
-              </button>
-
-              <button>2</button>
-
-              <button>3</button>
-
-              <button>{">"}</button>
-
-            </div>
-
           </div>
-
         </div>
-
       </main>
-
     </AdminLayout>
   );
 }

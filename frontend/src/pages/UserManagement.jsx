@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "../components/AdminLayout";
 import "../styles/userManagement.css";
 
@@ -8,7 +8,9 @@ function UserManagement() {
   const [status, setStatus] = useState("All Status");
   const [institution, setInstitution] = useState("All Institutions");
 
+  /*
   // Dummy data (replace with backend later)
+
   const [users] = useState([
     {
       id: 1,
@@ -51,6 +53,29 @@ function UserManagement() {
       lastActive: "45 mins ago",
     },
   ]);
+  */
+
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/users"
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUsers(data.users);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const filteredUsers = users.filter((user) => {
     return (
@@ -66,15 +91,10 @@ function UserManagement() {
   return (
     <AdminLayout active="users">
       <main className="user-management-main">
-
         <div className="dashboard-top-grid">
-
           {/* FILTERS */}
-
           <div className="filter-card">
-
             <div className="filter-grid">
-
               <div>
                 <label>Search Name or Email</label>
 
@@ -96,7 +116,6 @@ function UserManagement() {
                   <option>All Roles</option>
                   <option>Doctor</option>
                   <option>Admin</option>
-                  <option>Lab Tech</option>
                 </select>
               </div>
 
@@ -109,6 +128,7 @@ function UserManagement() {
                 >
                   <option>All Status</option>
                   <option>Verified</option>
+                  <option>Pending</option>
                   <option>Suspended</option>
                 </select>
               </div>
@@ -121,20 +141,21 @@ function UserManagement() {
                   onChange={(e) => setInstitution(e.target.value)}
                 >
                   <option>All Institutions</option>
-                  <option>St. Mary's Eye Clinic</option>
-                  <option>Global Diagnostics Hub</option>
-                  <option>Vision Research Lab</option>
+
+                  {[...new Set(users.map((user) => user.institution))].map(
+                    (inst) => (
+                      <option key={inst}>
+                        {inst}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
-
             </div>
-
           </div>
 
           {/* PLATFORM HEALTH */}
-
           <div className="health-card">
-
             <h3>Platform Health</h3>
 
             <p>
@@ -142,7 +163,6 @@ function UserManagement() {
             </p>
 
             <div className="health-footer">
-
               <div className="tech-stack">
                 <span>JWT</span>
                 <span>AWS</span>
@@ -152,51 +172,42 @@ function UserManagement() {
               <div className="uptime">
                 ● 99.9% Uptime
               </div>
-
             </div>
-
           </div>
-
         </div>
 
         {/* USER TABLE */}
-
         <div className="table-card">
-
           <table>
-
             <thead>
               <tr>
                 <th>User Name</th>
                 <th>Role</th>
                 <th>Institution</th>
                 <th>Status</th>
-                <th>Last Active</th>
+                <th>Joined</th>
                 <th>Actions</th>
               </tr>
             </thead>
 
             <tbody>
-
               {filteredUsers.map((user) => (
-
                 <tr key={user.id}>
-
                   <td>
-
                     <div className="user-cell">
-
                       <div className="avatar">
-                        {user.initials}
+                        {user.name
+                          .split(" ")
+                          .map((word) => word[0])
+                          .join("")
+                          .substring(0, 2)}
                       </div>
 
                       <div>
                         <strong>{user.name}</strong>
                         <p>{user.email}</p>
                       </div>
-
                     </div>
-
                   </td>
 
                   <td>{user.role}</td>
@@ -204,23 +215,24 @@ function UserManagement() {
                   <td>{user.institution}</td>
 
                   <td>
-
                     <span
                       className={
                         user.status === "Verified"
                           ? "status verified"
+                          : user.status === "Pending"
+                          ? "status pending"
                           : "status suspended"
                       }
                     >
                       {user.status}
                     </span>
-
                   </td>
 
-                  <td>{user.lastActive}</td>
+                  <td>
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
 
                   <td>
-
                     <button className="table-link">
                       View Details
                     </button>
@@ -228,25 +240,18 @@ function UserManagement() {
                     <button className="table-link">
                       Manage
                     </button>
-
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
 
           <div className="table-footer">
-
             <span>
               Showing {filteredUsers.length} of {users.length} users
             </span>
 
             <div>
-
               <button className="page-btn">
                 Previous
               </button>
@@ -254,13 +259,9 @@ function UserManagement() {
               <button className="page-btn">
                 Next
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       </main>
     </AdminLayout>
   );

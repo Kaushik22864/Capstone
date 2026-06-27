@@ -1,14 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import AdminLayout from "../components/AdminLayout";
 import "../styles/adminDashboard.css";
 
 function AdminDashboard() {
+  /*
   const recentRequests = [
     {
       id: 1,
       doctor: "Dr. Sarah Chen",
       email: "sarah.chen@hospital.com",
-      medicalId: "MD-8829-XJ",
       specialization: "Cardiology",
       submitted: "Oct 24, 2023",
       status: "Awaiting OCR",
@@ -17,7 +18,6 @@ function AdminDashboard() {
       id: 2,
       doctor: "Dr. James Wilson",
       email: "jwilson@visioncare.org",
-      medicalId: "MD-1932-PL",
       specialization: "Retina",
       submitted: "Oct 24, 2023",
       status: "Awaiting OCR",
@@ -26,71 +26,146 @@ function AdminDashboard() {
       id: 3,
       doctor: "Dr. Emily Brown",
       email: "ebrown@cityeye.com",
-      medicalId: "MD-5521-ZR",
       specialization: "Glaucoma",
       submitted: "Oct 23, 2023",
       status: "Awaiting OCR",
     },
   ];
+  */
+
+  const navigate = useNavigate();
+
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    verifiedDoctors: 0,
+    pendingRequests: 0,
+    verifiedToday: 0,
+    rejectedRequests: 0,
+  });
+
+  const [recentRequests, setRecentRequests] = useState([]);
+
+  useEffect(() => {
+    fetchDashboard();
+    fetchRecentRequests();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/dashboard"
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchRecentRequests = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/applications/recent"
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setRecentRequests(data.applications);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const approveDoctor = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/application/${id}/approve`,
+        {
+          method: "PUT",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Doctor Approved");
+        fetchDashboard();
+        fetchRecentRequests();
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const rejectDoctor = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/application/${id}/reject`,
+        {
+          method: "PUT",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Application Rejected");
+        fetchDashboard();
+        fetchRecentRequests();
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <AdminLayout active="dashboard">
       <main className="dashboard-main">
-
-        {/* Welcome */}
-
         <div className="dashboard-header">
           <h1>Welcome Admin!</h1>
         </div>
 
-        {/* Stats */}
-
         <div className="stats-grid">
-
           <div className="stat-card">
-
             <div className="stat-top">
               <span className="stat-icon">👥</span>
-              <small className="positive">↗ +12.5%</small>
             </div>
 
             <p>Total Users</p>
-            <h2>0</h2>
-
+            <h2>{stats.totalUsers}</h2>
           </div>
 
           <div className="stat-card">
-
             <div className="stat-top">
               <span className="stat-icon">🩺</span>
-              <small className="positive">↗ +4.2%</small>
             </div>
 
             <p>Verified Doctors</p>
-            <h2>0</h2>
-
+            <h2>{stats.verifiedDoctors}</h2>
           </div>
 
           <div className="stat-card">
-
             <div className="stat-top">
               <span className="stat-icon">📋</span>
-              <small className="warning">42 Active</small>
             </div>
 
             <p>Pending Requests</p>
-            <h2>0</h2>
-
+            <h2>{stats.pendingRequests}</h2>
           </div>
-
         </div>
 
-        {/* Graph & Summary */}
-
         <div className="dashboard-middle">
-
           <div className="graph-card">
-
             <div className="graph-header">
               <h3>User Growth</h3>
               <span>● Doctors</span>
@@ -115,117 +190,98 @@ function AdminDashboard() {
               <span>Sat</span>
               <span>Sun</span>
             </div>
-
           </div>
 
           <div className="dashboard-sidecards">
-
             <div className="small-card">
               <small>VERIFIED TODAY</small>
-              <h2>158</h2>
-              <p>Consistency rating: 98.4%</p>
+              <h2>{stats.verifiedToday}</h2>
             </div>
 
             <div className="small-card">
               <small>REJECTED REQUESTS</small>
-              <h2>9</h2>
-              <p>Flagged for document fraud</p>
+              <h2>{stats.rejectedRequests}</h2>
             </div>
-
           </div>
-
         </div>
 
-        {/* Recent Requests */}
-
         <div className="requests-card">
-
           <div className="requests-header">
-
             <h3>Recent Access Requests</h3>
 
             <Link to="/doctor-verification">
               View All
             </Link>
-
           </div>
 
           <table>
-
             <thead>
-
               <tr>
                 <th>Doctor Name</th>
-                <th>Medical ID</th>
                 <th>Specialization</th>
                 <th>Submission Date</th>
                 <th>Document Status</th>
                 <th>Actions</th>
               </tr>
-
             </thead>
 
             <tbody>
-
               {recentRequests.map((doctor) => (
-
-                <tr key={doctor.id}>
-
+                <tr key={doctor._id}>
                   <td>
-
                     <div className="doctor-info">
-                      <strong>{doctor.doctor}</strong>
+                      <strong>
+                        {doctor.firstName} {doctor.lastName}
+                      </strong>
                       <p>{doctor.email}</p>
                     </div>
-
                   </td>
 
-                  <td>{doctor.medicalId}</td>
-
                   <td>
-
                     <span className="specialization-badge">
                       {doctor.specialization}
                     </span>
-
                   </td>
 
-                  <td>{doctor.submitted}</td>
+                  <td>
+                    {new Date(doctor.createdAt).toLocaleDateString()}
+                  </td>
 
                   <td>
-
                     <span className="pending-status">
                       ● {doctor.status}
                     </span>
-
                   </td>
 
                   <td className="action-buttons">
-
-                    <button className="view-button">
+                    <button
+                      className="view-button"
+                      onClick={() =>
+                        navigate(`/doctor-credential-review/${doctor._id}`)
+                      }
+                    >
                       View Credentials
                     </button>
 
-                    <button className="approve-button">
+                    <button
+                      className="approve-button"
+                      onClick={() => approveDoctor(doctor._id)}
+                    >
                       Approve
                     </button>
 
-                    <button className="reject-button">
+                    <button
+                      className="reject-button"
+                      onClick={() => rejectDoctor(doctor._id)}
+                    >
                       Reject
                     </button>
-
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         </div>
-
       </main>
     </AdminLayout>
   );

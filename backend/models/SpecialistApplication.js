@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
-const specialistSchema = new mongoose.Schema(
+const specialistApplicationSchema =
+new mongoose.Schema(
 {
     firstName:{
         type:String,
@@ -38,15 +39,16 @@ const specialistSchema = new mongoose.Schema(
         required:true
     },
 
-    verified:{
-        type:Boolean,
-        default:true
-    },
-
-    isActive: {
-    type: Boolean,
-    default: true
+    status:{
+        type:String,
+        enum:[
+            "pending",
+            "approved",
+            "rejected"
+        ],
+        default:"pending"
     }
+
 },
 {
     timestamps:true
@@ -55,6 +57,6 @@ const specialistSchema = new mongoose.Schema(
 
 module.exports =
 mongoose.model(
-    "Specialist",
-    specialistSchema
+    "SpecialistApplication",
+    specialistApplicationSchema
 );
