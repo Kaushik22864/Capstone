@@ -349,6 +349,142 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// ============================
+// Get Single User
+// ============================
+
+const getUserDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let user = await Specialist.findById(id);
+    let role = "Doctor";
+    if (!user) {
+      user = await Admin.findById(id);
+      role = "Admin";
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        ...user.toObject(),
+        role
+      }
+    });
+  }
+
+  catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+
+// ============================
+// Update User Role
+// ============================
+
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (role === "Admin") {
+      const doctor = await Specialist.findById(id);
+      if (!doctor) {
+        return res.status(404).json({
+          success:false,
+          message:"Doctor not found"
+        })
+      }
+
+      const admin = new Admin({
+        firstName: doctor.firstName,
+        lastName: doctor.lastName,
+        email: doctor.email,
+        password: doctor.password
+      });
+      await admin.save();
+      await Specialist.findByIdAndDelete(id);
+    }
+
+    else if (role === "Doctor") {
+      const admin = await Admin.findById(id);
+      if (!admin) {
+        return res.status(404).json({
+          success:false,
+          message:"Admin not found"
+        });
+      }
+
+      const doctor = new Specialist({
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        email: admin.email,
+        password: admin.password,
+        hospital: "Not Assigned",
+        specialization: "General",
+        experience: 0,
+        verified: true
+      });
+      await doctor.save();
+      await Admin.findByIdAndDelete(id);
+    }
+    res.status(200).json({
+      success:true,
+      message:"Role updated successfully"
+    });
+  }
+
+  catch(error){
+    console.error(error);
+    res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
+
+// ============================
+// Delete User
+// ============================
+
+const deleteUser = async (req,res)=>{
+  try{
+    const {id}=req.params;
+    let deleted=await Specialist.findByIdAndDelete(id);
+    if(!deleted){
+      deleted=await Admin.findByIdAndDelete(id);
+
+    }
+    if(!deleted){
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      });
+    }
+    res.status(200).json({
+      success:true,
+      message:"User deleted successfully"
+    });
+  }
+
+  catch(error){
+    console.error(error);
+    res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   getDashboardStats,
@@ -357,6 +493,7 @@ module.exports = {
   approveApplication,
   rejectApplication,
   getAllUsers,
+  getUserDetails,
+  updateUserRole,
+  deleteUser
 }
-
-//a

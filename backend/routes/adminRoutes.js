@@ -9,7 +9,10 @@ const {
   getApplicationById,
   approveApplication,
   rejectApplication,
-  getAllUsers
+  getAllUsers,
+  getUserDetails
+  ,updateUserRole
+  ,deleteUser
 } = require("../controllers/adminController");
 
 router.post(
@@ -45,6 +48,21 @@ router.get(
 router.get(
     "/application/:id",
     getApplicationById
+);
+
+router.get(
+  "/user/:id",
+  getUserDetails
+);
+
+router.put(
+  "/user/:id/role",
+  updateUserRole
+);
+
+router.delete(
+  "/user/:id",
+  deleteUser
 );
 
 module.exports = router;
