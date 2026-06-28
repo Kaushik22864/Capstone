@@ -1,4 +1,5 @@
 const Specialist = require("../models/Specialist");
+const SpecialistApplication = require("../models/SpecialistApplication");
 const Admin = require("../models/Admin");
 
 const {
@@ -95,18 +96,21 @@ const getDashboardStats = async (req, res) => {
       verified: true,
     });
 
-    const pendingRequests = await Specialist.countDocuments({
-      verified: false,
-    });
+    const pendingRequests =
+      await SpecialistApplication.countDocuments({
+        status: "pending",
+      });
 
-    const rejectedRequests = 0;
+    const rejectedRequests =
+      await SpecialistApplication.countDocuments({
+        status: "rejected",
+      });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const verifiedToday = await Specialist.countDocuments({
-      verified: true,
-      updatedAt: {
+      createdAt: {
         $gte: today,
       },
     });
@@ -137,7 +141,9 @@ const getDashboardStats = async (req, res) => {
 
 const getRecentApplications = async (req, res) => {
   try {
-    const applications = await Specialist.find({ verified: false }).sort({
+    const applications = await SpecialistApplication.find({
+      status: "pending",
+    }).sort({
       createdAt: -1,
     });
 
@@ -161,18 +167,19 @@ const getRecentApplications = async (req, res) => {
 
 const getApplicationById = async (req, res) => {
   try {
-    const doctor = await Specialist.findById(req.params.id);
+    const application =
+      await SpecialistApplication.findById(req.params.id);
 
-    if (!doctor) {
+    if (!application) {
       return res.status(404).json({
         success: false,
-        message: "Doctor not found",
+        message: "Application not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      doctor,
+      doctor: application,
     });
   } catch (error) {
     console.error(error);
@@ -192,17 +199,38 @@ const approveApplication = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const doctor = await Specialist.findById(id);
+    const application =
+      await SpecialistApplication.findById(id);
 
-    if (!doctor) {
+    if (!application) {
       return res.status(404).json({
         success: false,
-        message: "Doctor not found",
+        message: "Application not found",
       });
     }
 
-    doctor.verified = true;
-    await doctor.save();
+    const existing =
+      await Specialist.findOne({
+        email: application.email,
+      });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor already exists",
+      });
+    }
+
+    const doctor = await Specialist.create({
+      firstName: application.firstName,
+      lastName: application.lastName,
+      email: application.email,
+      password: application.password,
+      hospital: application.hospital,
+      specialization: application.specialization,
+      experience: application.experience,
+      verified: true,
+    });
 
     auditService.log({
       action: "APPLICATION_APPROVED",
@@ -213,10 +241,11 @@ const approveApplication = async (req, res) => {
       },
     });
 
+    await SpecialistApplication.findByIdAndDelete(id);
+
     res.status(200).json({
       success: true,
       message: "Doctor approved successfully",
-      doctor,
     });
   } catch (error) {
     console.error(error);
@@ -236,25 +265,28 @@ const rejectApplication = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const doctor = await Specialist.findById(id);
+    const application =
+      await SpecialistApplication.findById(id);
 
-    if (!doctor) {
+    if (!application) {
       return res.status(404).json({
         success: false,
-        message: "Doctor not found",
+        message: "Application not found",
       });
     }
 
+    application.status = "rejected";
+
+    await application.save();
+
     auditService.log({
       action: "APPLICATION_REJECTED",
-      userId: doctor._id,
+      userId: application._id,
       ipAddress: req.ip,
       details: {
-        email: doctor.email,
+        email: application.email,
       },
     });
-
-    await Specialist.findByIdAndDelete(id);
 
     res.status(200).json({
       success: true,
@@ -271,7 +303,7 @@ const rejectApplication = async (req, res) => {
 };
 
 // ============================
-// Get All Users For User Management Page
+// Get All Users
 // ============================
 
 const getAllUsers = async (req, res) => {
@@ -285,8 +317,8 @@ const getAllUsers = async (req, res) => {
       email: doctor.email,
       role: "Doctor",
       institution: doctor.hospital,
-      status: doctor.verified ? "Verified" : "Pending",
-      verified: doctor.verified,
+      status: "Verified",
+      verified: true,
       createdAt: doctor.createdAt,
     }));
 
@@ -301,11 +333,9 @@ const getAllUsers = async (req, res) => {
       createdAt: admin.createdAt,
     }));
 
-    const users = [...doctorUsers, ...adminUsers];
-
     res.status(200).json({
       success: true,
-      users,
+      users: [...doctorUsers, ...adminUsers],
     });
   } catch (error) {
     console.error(error);
@@ -316,10 +346,6 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
-
-// ============================
-// Exports
-// ============================
 
 module.exports = {
   loginAdmin,
