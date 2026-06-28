@@ -1,7 +1,7 @@
 const Specialist = require("../models/Specialist");
 const { passwordService, jwtService, auditService } = require("../../security/services");
 const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/services/audit.service");
-
+const SpecialistApplication = require("../models/SpecialistApplication");
 const jwt = require("jsonwebtoken");
 
 // ============================
@@ -47,7 +47,7 @@ const registerSpecialist = async (req, res) => {
 
     }
 
-    // Password Security: Hashing & Policy Validation
+    // Password Security
 
     const hashedPassword =
       await passwordService.hashPassword(password, {
@@ -60,21 +60,23 @@ const registerSpecialist = async (req, res) => {
 
       });
 
-    // 2. Data Security: Encrypt PII fields (AES-256) for HIPAA compliance
+    // Create pending application
 
+    const application =
+      await SpecialistApplication.create({
 
-    const specialist =
-      await Specialist.create({
         firstName,
         lastName,
         email: emailLower,
         password: hashedPassword,
         hospital,
         specialization,
-        experience
+        experience,
+        status: "pending"
+
       });
 
-    // Log application creation
+    // Audit Log
 
     auditService.log({
 
