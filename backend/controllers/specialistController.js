@@ -189,10 +189,4 @@ const loginSpecialist = async (req, res) => {
 module.exports = {
   registerSpecialist,
   loginSpecialist,
-<<<<<<< HEAD
 };
-=======
-};
-
-//a
->>>>>>> b71681ce8458c4bdfbd4805028d5ee3f8149f608
