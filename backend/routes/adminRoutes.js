@@ -10,14 +10,20 @@ const {
   approveApplication,
   rejectApplication,
   getAllUsers,
-  getUserDetails
-  ,updateUserRole
-  ,deleteUser
+  getUserDetails,
+  updateUserRole,
+  deleteUser,
+  getCredentialViewUrl
 } = require("../controllers/adminController");
 
 router.post(
   "/login",
   loginAdmin
+);
+
+router.post(
+  "/credential-view-url",
+  getCredentialViewUrl
 );
 
 router.get(

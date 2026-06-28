@@ -1,12 +1,39 @@
 const Specialist = require("../models/Specialist");
 const SpecialistApplication = require("../models/SpecialistApplication");
 const Admin = require("../models/Admin");
+const axios = require("axios");
 
 const {
   passwordService,
   jwtService,
   auditService,
 } = require("../../security/services");
+
+const getPresignedViewUrlFromLambda = async (key) => {
+  if (!key) return "";
+  try {
+    const response = await axios.post(
+      "https://b24uxf3gwloquyts6lvh55uoue0vawvl.lambda-url.ap-south-1.on.aws/",
+      {
+        key: key,
+        fileKey: key,
+        fileName: key,
+        credentialKey: key,
+      }
+    );
+    if (typeof response.data === "string") return response.data;
+    return (
+      response.data.viewUrl ||
+      response.data.url ||
+      response.data.downloadUrl ||
+      response.data.presignedUrl ||
+      ""
+    );
+  } catch (err) {
+    console.error("Error generating view URL from Lambda:", err.message);
+    return "";
+  }
+};
 
 // ============================
 // Admin Login
@@ -179,9 +206,17 @@ const getApplicationById = async (req, res) => {
       });
     }
 
+    let doctor = application.toObject();
+    if (doctor.credentialKey) {
+      const viewUrl = await getPresignedViewUrlFromLambda(doctor.credentialKey);
+      if (viewUrl) {
+        doctor.credentialUrl = viewUrl;
+      }
+    }
+
     res.status(200).json({
       success: true,
-      doctor: application,
+      doctor,
     });
   } catch (error) {
     console.error(error);
@@ -231,6 +266,8 @@ const approveApplication = async (req, res) => {
       hospital: application.hospital,
       specialization: application.specialization,
       experience: application.experience,
+      credentialKey: application.credentialKey,
+      credentialUrl: application.credentialUrl,
       verified: true,
     });
 
@@ -370,10 +407,18 @@ const getUserDetails = async (req, res) => {
       });
     }
 
+    let userObj = user.toObject();
+    if (userObj.credentialKey) {
+      const viewUrl = await getPresignedViewUrlFromLambda(userObj.credentialKey);
+      if (viewUrl) {
+        userObj.credentialUrl = viewUrl;
+      }
+    }
+
     res.status(200).json({
       success: true,
       user: {
-        ...user.toObject(),
+        ...userObj,
         role
       }
     });
@@ -485,6 +530,26 @@ const deleteUser = async (req,res)=>{
   }
 };
 
+const getCredentialViewUrl = async (req, res) => {
+  try {
+    const { key } = req.body;
+    if (!key) {
+      return res.status(400).json({ success: false, message: "Key is required" });
+    }
+    const viewUrl = await getPresignedViewUrlFromLambda(key);
+    res.status(200).json({
+      success: true,
+      viewUrl,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   loginAdmin,
   getDashboardStats,
@@ -495,5 +560,6 @@ module.exports = {
   getAllUsers,
   getUserDetails,
   updateUserRole,
-  deleteUser
+  deleteUser,
+  getCredentialViewUrl
 }
