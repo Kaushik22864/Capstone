@@ -20,41 +20,96 @@ function Login() {
   };
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/specialists/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
+  try {
+
+    // Try Admin Login First
+    let response = await fetch(
+      "http://localhost:5000/api/admin/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
+    let data = await response.json();
+
+    if (data.success) {
+
+      localStorage.setItem(
+        "token",
+        data.accessToken
       );
 
-      const data = await response.json();
+      localStorage.setItem(
+        "role",
+        "admin"
+      );
 
-      if (data.success) {
-        localStorage.setItem("token", data.token);
+      localStorage.setItem(
+        "admin",
+        JSON.stringify(data.admin)
+      );
 
-        localStorage.setItem(
-          "specialist",
-          JSON.stringify(data.specialist)
-        );
+      alert("Welcome Admin!");
 
-        alert("Login Successful");
+      navigate("/admin-dashboard");
 
-        navigate("/analysis"); //CHANGE THIS TO DASHBOARD LATER
-      } else {
-        alert(data.message);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Could not connect to server");
+      return;
     }
-  };
+
+    // If not admin, try Specialist Login
+    response = await fetch(
+      "http://localhost:5000/api/specialists/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      }
+    );
+
+    data = await response.json();
+
+    if (data.success) {
+
+      localStorage.setItem(
+        "token",
+        data.accessToken
+      );
+
+      localStorage.setItem(
+        "role",
+        "doctor"
+      );
+
+      localStorage.setItem(
+        "specialist",
+        JSON.stringify(data.specialist)
+      );
+
+      alert("Welcome Doctor!");
+
+      navigate("/analysis"); // Change later to doctor dashboard
+
+      return;
+    }
+
+    alert("Invalid email or password");
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Could not connect to server");
+
+  }
+};
 
   return (
     <div className="login-page">
