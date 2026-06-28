@@ -1,4 +1,5 @@
 const Specialist = require("../models/Specialist");
+const SpecialistApplication = require("../models/SpecialistApplication");
 const Admin = require("../models/Admin");
 
 const {
@@ -95,8 +96,8 @@ const getDashboardStats = async (req, res) => {
       verified: true,
     });
 
-    const pendingRequests = await Specialist.countDocuments({
-      verified: false,
+    const pendingRequests = await SpecialistApplication.countDocuments({
+      status: "Pending",
     });
 
     const rejectedRequests = 0;
@@ -137,7 +138,9 @@ const getDashboardStats = async (req, res) => {
 
 const getRecentApplications = async (req, res) => {
   try {
-    const applications = await Specialist.find({ verified: false }).sort({
+    const applications = await SpecialistApplication.find({
+      status: "Pending",
+    }).sort({
       createdAt: -1,
     });
 
