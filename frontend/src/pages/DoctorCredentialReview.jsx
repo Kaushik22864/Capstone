@@ -139,16 +139,41 @@ function DoctorCredentialReview() {
                 <h3>Document Evidence</h3>
 
                 <div className="document-actions">
-                  <button title="Zoom">🔍</button>
-                  <button title="Download">⬇️</button>
+                  {doctor.credentialUrl && (
+                    <a
+                      href={doctor.credentialUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="download-btn-link"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <button title="View / Download">⬇️ Open / Download</button>
+                    </a>
+                  )}
                 </div>
               </div>
 
               <div className="document-preview">
-                <img
-                  src="https://placehold.co/800x1000?text=Medical+License"
-                  alt="Medical License"
-                />
+                {doctor.credentialUrl ? (
+                  doctor.credentialUrl.split("?")[0].toLowerCase().endsWith(".pdf") ? (
+                    <iframe
+                      src={doctor.credentialUrl}
+                      title="Medical Credential Document"
+                      width="100%"
+                      height="500px"
+                    />
+                  ) : (
+                    <img
+                      src={doctor.credentialUrl}
+                      alt="Medical License / Credential"
+                      style={{ maxWidth: "100%", maxHeight: "500px", objectFit: "contain" }}
+                    />
+                  )
+                ) : (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
+                    <p>No credential document uploaded</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -188,6 +213,18 @@ function DoctorCredentialReview() {
                   <label>Submission Date</label>
                   <p>{new Date(doctor.createdAt).toLocaleDateString()}</p>
                 </div>
+
+                <div>
+                  <label>Doctor Mongo ID</label>
+                  <p style={{ wordBreak: "break-all", fontFamily: "monospace" }}>{doctor._id}</p>
+                </div>
+
+                {doctor.credentialKey && (
+                  <div>
+                    <label>S3 Credential Key</label>
+                    <p style={{ wordBreak: "break-all", fontFamily: "monospace" }}>{doctor.credentialKey}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

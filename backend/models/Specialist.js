@@ -46,6 +46,14 @@ const specialistSchema = new mongoose.Schema(
     isActive: {
     type: Boolean,
     default: true
+    },
+
+    credentialKey:{
+        type:String
+    },
+
+    credentialUrl:{
+        type:String
     }
 },
 {

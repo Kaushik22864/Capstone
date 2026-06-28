@@ -47,8 +47,15 @@ new mongoose.Schema(
             "rejected"
         ],
         default:"pending"
-    }
+    },
 
+    credentialKey:{
+        type:String
+    },
+
+    credentialUrl:{
+        type:String
+    }
 },
 {
     timestamps:true
