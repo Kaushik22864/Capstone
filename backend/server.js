@@ -56,6 +56,11 @@ app.use(
   require("./routes/specialistRoutes")
 );
 
+app.use(
+    "/api/admin",
+    require("./routes/adminRoutes")
+);
+
 // Health Check
 app.get("/", (req, res) => {
   res.send("API Running");
