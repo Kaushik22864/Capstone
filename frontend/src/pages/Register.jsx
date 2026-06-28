@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 import "../styles/register.css";
 
 function Register() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -43,6 +46,37 @@ function Register() {
   const submitApplication = async (e) => {
     e.preventDefault();
 
+    let credentialKey = "";
+    let credentialUrl = "";
+
+    if (selectedFile) {
+      setIsUploading(true);
+      try {
+        const mimeType = selectedFile.type || "application/octet-stream";
+        const lambdaRes = await axios.post(
+          "http://localhost:5000/api/specialists/presigned-url",
+          {
+            fileName: selectedFile.name,
+            fileType: mimeType,
+          }
+        );
+        const { uploadUrl, key } = lambdaRes.data;
+        await axios.put(uploadUrl, selectedFile, {
+          headers: {
+            "Content-Type": mimeType,
+          },
+        });
+        credentialKey = key;
+        credentialUrl = uploadUrl ? uploadUrl.split("?")[0] : "";
+      } catch (uploadErr) {
+        console.error("Credential Upload Error:", uploadErr);
+        setIsUploading(false);
+        alert(`Credential upload failed: ${uploadErr.response?.data?.message || uploadErr.message || "Network error during file upload"}`);
+        return;
+      }
+      setIsUploading(false);
+    }
+
     try {
       const response = await fetch(
         "http://localhost:5000/api/specialists/register",
@@ -54,6 +88,8 @@ function Register() {
           body: JSON.stringify({
             ...formData,
             experience: Number(formData.experience),
+            credentialKey,
+            credentialUrl,
           }),
         }
       );
@@ -64,7 +100,6 @@ function Register() {
         setPasswordErrors([]);
         navigate("/verification-pending");
       } else {
-        // Password validation errors from backend
         if (data.code === "PASSWORD_VALIDATION_FAILED") {
           setPasswordErrors(data.errors || []);
           setStep(1); // Return to password page
@@ -74,8 +109,8 @@ function Register() {
         }
       }
     } catch (error) {
-      console.error(error);
-      alert("Could not connect to backend");
+      console.error("Backend Registration Error:", error);
+      alert(`Registration failed: ${error.message || "Could not connect to backend"}`);
     }
   };
 
@@ -220,10 +255,14 @@ function Register() {
               <div className="upload-box">
                 <p>⬆</p>
                 <span>
-                  Click to upload or drag to drop
+                  {selectedFile ? `Selected: ${selectedFile.name}` : "Click to upload credential or medical license"}
                 </span>
 
-                <input type="file" />
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setSelectedFile(e.target.files[0] || null)}
+                />
               </div>
 
               <div className="button-group">
@@ -232,6 +271,7 @@ function Register() {
                   type="button"
                   className="btn-back"
                   onClick={previousStep}
+                  disabled={isUploading}
                 >
                   Back
                 </button>
@@ -239,8 +279,9 @@ function Register() {
                 <button
                   type="submit"
                   className="btn-submit"
+                  disabled={isUploading}
                 >
-                  Submit Application
+                  {isUploading ? "Uploading Credential..." : "Submit Application"}
                 </button>
 
               </div>

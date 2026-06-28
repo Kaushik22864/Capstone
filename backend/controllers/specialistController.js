@@ -3,6 +3,34 @@ const { passwordService, jwtService, auditService } = require("../../security/se
 const { AUDIT_EVENTS } = require("../../security/services/audit.service");
 const SpecialistApplication = require("../models/SpecialistApplication");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
+
+// ============================
+// Presigned Upload URL Proxy
+// ============================
+
+const getPresignedUrl = async (req, res) => {
+  try {
+    const { fileName, fileType } = req.body;
+    const response = await axios.post(
+      "https://au6zjukrzlky36hgjsy73aiwae0jzvfu.lambda-url.ap-south-1.on.aws/",
+      {
+        fileName,
+        fileType,
+      }
+    );
+    res.status(200).json({
+      success: true,
+      ...response.data,
+    });
+  } catch (error) {
+    console.error("Presigned URL error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate upload URL",
+    });
+  }
+};
 
 // ============================
 // Specialist Registration
@@ -18,6 +46,8 @@ const registerSpecialist = async (req, res) => {
       hospital,
       specialization,
       experience,
+      credentialKey,
+      credentialUrl,
     } = req.body;
 
     const emailLower = email.toLowerCase();
@@ -57,6 +87,8 @@ const registerSpecialist = async (req, res) => {
       hospital,
       specialization,
       experience,
+      credentialKey,
+      credentialUrl,
       status: "pending",
     });
 
@@ -187,6 +219,7 @@ const loginSpecialist = async (req, res) => {
 // ============================
 
 module.exports = {
+  getPresignedUrl,
   registerSpecialist,
   loginSpecialist,
 };

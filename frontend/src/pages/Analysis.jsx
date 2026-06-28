@@ -10,31 +10,7 @@ function Analysis() {
       alert("Please select an OCT image first.");
       return;
     }
-    try {
-      const response = await axios.post(
-        "https://au6zjukrzlky36hgjsy73aiwae0jzvfu.lambda-url.ap-south-1.on.aws/",
-        {
-          fileName: selectedFile.name,
-          fileType: selectedFile.type,
-        }
-      );
-      const { uploadUrl, key } = response.data;
-      await axios.put(uploadUrl, selectedFile, {
-        headers: {
-          "Content-Type": selectedFile.type,
-        },
-      });
-      await axios.post(
-        "http://localhost:5000/api/patients",
-        {
-          imageKey: key,
-        }
-      );
-      alert("Upload successful!");
-    } catch (err) {
-      console.error(err);
-      alert("Upload failed.");
-    }
+    alert("OCT image loaded for analysis.");
   };
   return (
     <div className="analysis-page">
