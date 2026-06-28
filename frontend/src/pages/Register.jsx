@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../styles/register.css";
+
 
 function Register() {
   const navigate = useNavigate();
@@ -18,6 +19,10 @@ function Register() {
   });
 
   const [passwordErrors, setPasswordErrors] = useState([]);
+  
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -30,6 +35,26 @@ function Register() {
       setPasswordErrors([]);
     }
   };
+
+  const handleFile = (file) => {
+  if (!file) return;
+
+  setSelectedImage(file);
+  setPreview(URL.createObjectURL(file));
+};
+
+const handleFileChange = (e) => {
+  handleFile(e.target.files[0]);
+};
+
+const handleDrop = (e) => {
+  e.preventDefault();
+  handleFile(e.dataTransfer.files[0]);
+};
+
+const handleDragOver = (e) => {
+  e.preventDefault();
+};
 
   const nextStep = (e) => {
     e.preventDefault();
@@ -217,14 +242,33 @@ function Register() {
 
               </div>
 
-              <div className="upload-box">
-                <p>⬆</p>
-                <span>
-                  Click to upload or drag to drop
-                </span>
+              <div
+  className="upload-box"
+  onClick={() => fileInputRef.current.click()}
+  onDrop={handleDrop}
+  onDragOver={handleDragOver}
+>
+  {preview ? (
+    <img
+      src={preview}
+      alt="Preview"
+      className="preview-image"
+    />
+  ) : (
+    <>
+      <p>⬆</p>
+      <span>Click to upload or drag & drop</span>
+    </>
+  )}
 
-                <input type="file" />
-              </div>
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*"
+    onChange={handleFileChange}
+    hidden
+  />
+</div>
 
               <div className="button-group">
 
