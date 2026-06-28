@@ -1,5 +1,5 @@
 const Specialist = require("../models/Specialist");
-const { passwordService, jwtService, auditService, encryptionService } = require("../../security/services");
+const { passwordService, jwtService, auditService } = require("../../security/services");
 const { AUDIT_EVENTS, AUDIT_LEVELS } = require("../../security/services/audit.service");
 
 // Specialist Registration
@@ -32,19 +32,16 @@ const registerSpecialist = async (req, res) => {
     });
 
     // 2. Data Security: Encrypt PII fields (AES-256) for HIPAA compliance
-    const encryptedData = encryptionService.encryptFields(
-      { firstName, lastName, hospital },
-      ['firstName', 'lastName', 'hospital']
-    );
 
-    const specialist =
-      await Specialist.create({
-        ...encryptedData,
-        email: emailLower,
-        password: hashedPassword,
-        specialization,
-        experience
-      });
+    const specialist = await Specialist.create({
+      firstName,
+      lastName,
+      email: emailLower,
+      password: hashedPassword,
+      hospital,
+      specialization,
+      experience
+    });
 
     // Log user creation event
     auditService.log({
@@ -60,6 +57,16 @@ const registerSpecialist = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    // Security framework validation errors
+    if (error.code) {
+      return res.status(400).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+        errors: error.details || []
+      });
+    }
 
     res.status(500).json({
       success: false,
